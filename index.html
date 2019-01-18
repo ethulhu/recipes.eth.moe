@@ -1,0 +1,140 @@
+<html>
+<head>
+  <title>brandy butter</title>
+  <script src="./menu.js"></script>
+  <script src="./recipe.js"></script>
+<style>
+ul.doable {
+	list-style: none;
+}
+.done {
+	text-decoration: line-through;
+}
+</style>
+</head>
+
+<body>
+	<main>
+	</main>
+
+<script>
+'use strict';
+function newDoableSection( id, title ) {
+	title = title || id;
+
+	let tmpl = document.querySelector( '#template-doable-section' );
+	let section = document.importNode( tmpl.content, true );
+	section.id = id;
+	section.querySelector( 'h2' ).textContent = title;
+	return section;
+}
+</script>
+<template id='template-doable-section'>
+	<section id='section-id'>
+		<h2>section-title</h2>
+		<ul class='doable'>
+		</ul>
+	</section>
+</template>
+
+<script>
+'use strict';
+function newDoableItem( text ) {
+	let tmpl = document.querySelector( '#template-doable-item' );
+	let li = document.importNode( tmpl.content, true );
+
+	li.querySelector( 'input' )
+	  .addEventListener( 'change',
+	                     e => e.target
+	                           .parentElement
+	                           .classList
+	                           .toggle( 'done' ));
+
+	li.querySelector( 'span' )
+	  .textContent = text;
+
+	return li;
+}
+</script>
+<template id='template-doable-item'>
+	<li>
+		<label>
+			<input type='checkbox' class='doable'><span>text</span>
+		</label>
+	</li>
+</template>
+
+<script>
+'use strict';
+
+function renderMenu( text ) {
+	let menu = Menu.parse( text );
+
+	let main = document.querySelector( 'main' );
+	main.innerHTML = '';
+
+	let header = document.createElement( 'h1' );
+	header.textContent = 'recipes';
+	main.appendChild( header );
+
+	let nav = document.createElement( 'nav' );
+	menu.items.forEach( name => {
+		let li = document.createElement( 'li' );
+		let a = document.createElement( 'a' );
+		a.onclick = () => {
+			window.location = '#' + name;
+		};
+		a.textContent = name;
+		li.appendChild( a );
+		nav.appendChild( li );
+	} );
+	main.appendChild( nav );
+}
+
+function renderRecipe( text ) {
+	let recipe = Recipe.parse( text );
+
+	let main = document.querySelector( 'main' );
+	main.innerHTML = '';
+
+	let header = document.createElement( 'h1' );
+	header.textContent = recipe.name;
+	main.appendChild( header );
+
+	['needs', 'steps'].forEach( key => {
+		let section = newDoableSection( key );
+		let ul = section.querySelector( 'ul' );
+		recipe[ key ].forEach(
+			v => ul.appendChild( newDoableItem( v ) ) );
+		main.appendChild( section );
+	} );
+}
+
+function load( path, renderFunc ) {
+	fetch( path ).then( response => {
+		if ( response.status !== 200 ) {
+			console.log( 'failed to fetch ' + path );
+			return;
+		}
+
+		response.text().then( renderFunc );
+	} );
+}
+
+let loadMenu = () => load( './recipes.lst', renderMenu );
+
+let loadRecipe = name => load( './' + name + '.rcp', renderRecipe );
+
+function renderPage() {
+	if ( ! window.location.hash ) {
+		loadMenu();
+	} else {
+		loadRecipe( window.location.hash.slice( 1 ) );
+	}
+}
+
+window.addEventListener( 'popstate', renderPage );
+renderPage();
+</script>
+</body>
+</html>
