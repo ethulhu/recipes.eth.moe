@@ -1,124 +1,106 @@
 <html>
 <head>
   <title>brandy butter</title>
-  <script src="./menu.js"></script>
-  <script src="./recipe.js"></script>
+  <script src='./elems.js'></script>
+  <script src='./menu.js'></script>
+  <script src='./recipe.js'></script>
 <style>
 ul.doable {
-	list-style: none;
+  list-style: none;
 }
 .done {
-	text-decoration: line-through;
+  text-decoration: line-through;
 }
 </style>
 </head>
 
 <body>
-	<main>
-	</main>
+  <main>
+  </main>
 
 <script>
 'use strict';
-function newDoableSection( id, title ) {
-	title = title || id;
 
-	let tmpl = document.querySelector( '#template-doable-section' );
-	let section = document.importNode( tmpl.content, true );
-	section.id = id;
-	section.querySelector( 'h2' ).textContent = title;
-	return section;
+// Setup.
+
+Elems.register( { toObject: window, withNameFunc: n => '_' + n },
+                'nav', 'a', 'h1', 'li', 'h2', 'section', 'label', 'input', 'ul', 'span');
+
+function handleEvent( querySelector, event, handlerFunc ) {
+  window.addEventListener( event, e => {
+    if ( e.target.matches( querySelector ) ) {
+      handlerFunc( e );
+    }
+  } );
 }
-</script>
-<template id='template-doable-section'>
-	<section id='section-id'>
-		<h2>section-title</h2>
-		<ul class='doable'>
-		</ul>
-	</section>
-</template>
 
-<script>
-'use strict';
+// DoableSection.
+
 function newDoableItem( text ) {
-	let tmpl = document.querySelector( '#template-doable-item' );
-	let li = document.importNode( tmpl.content, true );
-
-	li.querySelector( 'input' )
-	  .addEventListener( 'change',
-	                     e => e.target
-	                           .parentElement
-	                           .classList
-	                           .toggle( 'done' ));
-
-	li.querySelector( 'span' )
-	  .textContent = text;
-
-	return li;
+  return _li(
+           _label(
+             _input( { type: 'checkbox', class: 'doable' } ),
+             _span( text ),
+           )
+         );
 }
-</script>
-<template id='template-doable-item'>
-	<li>
-		<label>
-			<input type='checkbox' class='doable'><span>text</span>
-		</label>
-	</li>
-</template>
+function newDoableSection( title, items ) {
+  return _section(
+           _h2( title ),
+           _ul( { class: 'doable' },
+             items.map( newDoableItem ),
+           ),
+         );
+}
+handleEvent( 'input.doable', 'change', e => e.target
+                                             .parentElement
+                                             .classList
+                                             .toggle( 'done' ) );
 
-<script>
-'use strict';
+// Page render-funcs.
 
 function renderMenu( text ) {
-	let menu = Menu.parse( text );
+  let menu = Menu.parse( text );
 
-	let main = document.querySelector( 'main' );
-	main.innerHTML = '';
-
-	let header = document.createElement( 'h1' );
-	header.textContent = 'recipes';
-	main.appendChild( header );
-
-	let nav = document.createElement( 'nav' );
-	menu.items.forEach( name => {
-		let li = document.createElement( 'li' );
-		let a = document.createElement( 'a' );
-		a.onclick = () => {
-			window.location = '#' + name;
-		};
-		a.textContent = name;
-		li.appendChild( a );
-		nav.appendChild( li );
-	} );
-	main.appendChild( nav );
+  let render = Elems.renderFuncForSelector( 'main' );
+  render(
+    _h1( 'recipes' ),
+    _nav(
+      menu.items.map(
+        name => _li(
+                  _a(
+                    name,
+                    { class: 'hash-link', href: '#' + name },
+                  )
+                )
+      )
+    )
+  );
 }
 
 function renderRecipe( text ) {
-	let recipe = Recipe.parse( text );
+  let recipe = Recipe.parse( text );
 
-	let main = document.querySelector( 'main' );
-	main.innerHTML = '';
-
-	let header = document.createElement( 'h1' );
-	header.textContent = recipe.name;
-	main.appendChild( header );
-
-	['needs', 'steps'].forEach( key => {
-		let section = newDoableSection( key );
-		let ul = section.querySelector( 'ul' );
-		recipe[ key ].forEach(
-			v => ul.appendChild( newDoableItem( v ) ) );
-		main.appendChild( section );
-	} );
+  let render = Elems.renderFuncForSelector( 'main' );
+  render(
+    _h1( recipe.name ),
+    ['needs', 'steps'].map( key =>
+      newDoableSection( key, recipe[ key ] )
+    ),
+  );
 }
 
-function load( path, renderFunc ) {
-	fetch( path ).then( response => {
-		if ( response.status !== 200 ) {
-			console.log( 'failed to fetch ' + path );
-			return;
-		}
+// Loaders.
 
-		response.text().then( renderFunc );
-	} );
+function load( path, renderFunc ) {
+  fetch( path ).then( response => {
+    if ( response.status !== 200 ) {
+      console.log( 'failed to fetch ' + path );
+      return;
+    }
+
+    response.text().then( renderFunc );
+  } );
 }
 
 let loadMenu = () => load( './recipes.lst', renderMenu );
@@ -126,15 +108,15 @@ let loadMenu = () => load( './recipes.lst', renderMenu );
 let loadRecipe = name => load( './' + name + '.rcp', renderRecipe );
 
 function renderPage() {
-	if ( ! window.location.hash ) {
-		loadMenu();
-	} else {
-		loadRecipe( window.location.hash.slice( 1 ) );
-	}
+  if ( ! window.location.hash ) {
+    loadMenu();
+  } else {
+    loadRecipe( window.location.hash.slice( 1 ) );
+  }
 }
-
-window.addEventListener( 'popstate', renderPage );
+window.addEventListener( 'popstate', renderPage ); // Refresh on history or URL change.
 renderPage();
+
 </script>
 </body>
 </html>
