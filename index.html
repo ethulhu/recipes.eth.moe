@@ -70,7 +70,7 @@ function renderMenu( text ) {
         name => _li(
                   _a(
                     name,
-                    { class: 'hash-link', href: '#' + name },
+                    { href: '#' + name },
                   )
                 )
       )
@@ -103,15 +103,12 @@ function load( path, renderFunc ) {
   } );
 }
 
-let loadMenu = () => load( './recipes.lst', renderMenu );
-
-let loadRecipe = name => load( './' + name + '.rcp', renderRecipe );
-
 function renderPage() {
   if ( ! window.location.hash ) {
-    loadMenu();
+    load( './recipes.lst', renderMenu );
   } else {
-    loadRecipe( window.location.hash.slice( 1 ) );
+    let name = window.location.hash.slice( 1 );
+    load( './' + name + '.rcp', renderRecipe );
   }
 }
 window.addEventListener( 'popstate', renderPage ); // Refresh on history or URL change.
