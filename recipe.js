@@ -1,3 +1,5 @@
+'use strict';
+
 class Recipe {
   constructor (name, needs, steps) {
     this.name = name;
