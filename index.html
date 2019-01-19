@@ -111,7 +111,7 @@ function renderPage() {
     load( './recipes.lst', renderMenu );
   } else {
     let name = window.location.hash.slice( 1 );
-    load( './' + name + '.rcp', renderRecipe );
+    load( './recipes/' + name + '.rcp', renderRecipe );
   }
 }
 window.addEventListener( 'popstate', renderPage ); // Refresh on history or URL change.
