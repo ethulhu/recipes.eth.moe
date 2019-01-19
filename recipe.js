@@ -1,8 +1,9 @@
 'use strict';
 
 class Recipe {
-  constructor (name, needs, steps) {
+  constructor (name, notes, needs, steps) {
     this.name = name;
+    this.notes = notes;
     this.needs = needs;
     this.steps = steps;
   }
@@ -20,6 +21,7 @@ class Recipe {
     i++;
 
     let sections = {
+      notes: [],
       needs: [],
       steps: [],
     };
@@ -27,7 +29,7 @@ class Recipe {
     for (;;) {
       for ( ; i < lines.length && lines[i] === ''; i++ ) {}
       if ( i == lines.length ) {
-        return new Recipe(name, sections.needs, sections.steps); 
+        return new Recipe(name, sections.notes, sections.needs, sections.steps); 
       }
 
       let maybeSection = Object.keys(sections)

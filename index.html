@@ -109,10 +109,10 @@ function load( path, renderFunc ) {
 
 function renderPage() {
   if ( ! window.location.hash ) {
-    load( './recipes.lst', renderMenu );
+    load( './recipes.list', renderMenu );
   } else {
     let name = window.location.hash.slice( 1 );
-    load( './recipes/' + name + '.rcp', renderRecipe );
+    load( './recipes/' + name, renderRecipe );
   }
 }
 window.addEventListener( 'popstate', renderPage ); // Refresh on history or URL change.
