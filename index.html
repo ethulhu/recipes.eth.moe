@@ -70,10 +70,10 @@ function renderMenu( text ) {
     _h1( 'recipes' ),
     _nav(
       menu.items.map(
-        name => _li(
+        item => _li(
                   _a(
-                    name,
-                    { href: '#' + name },
+                    item.name,
+                    { href: '#' + item.path },
                   )
                 )
       )
