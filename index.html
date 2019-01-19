@@ -87,6 +87,7 @@ function renderRecipe( text ) {
 
   let render = Elems.renderFuncForSelector( 'main' );
   render(
+    _a ( { href: '#' }, '>back' ),
     _h1( recipe.name ),
     ['needs', 'steps'].map( key =>
       newDoableSection( key, recipe[ key ] )
