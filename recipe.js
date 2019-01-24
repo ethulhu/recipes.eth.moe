@@ -9,18 +9,18 @@ class Recipe {
   }
 
   static parse( text ) {
-    let lines = text.split( '\n' );
-    var i = 0;
+    const lines = text.split( '\n' );
+    let i = 0;
 
-    let err = msg => msg + ': "' + lines[i] + '"';
+    const err = msg => msg + ': "' + lines[i] + '"';
 
     for ( ; i < lines.length && lines[i] === ''; i++ ) {}
     if ( i == lines.length ) { throw 'recipe has no name'; }
 
-    let name = lines[i];
+    const name = lines[i];
     i++;
 
-    let sections = {
+    const sections = {
       notes: [],
       needs: [],
       steps: [],
@@ -32,11 +32,11 @@ class Recipe {
         return new Recipe(name, sections.notes, sections.needs, sections.steps); 
       }
 
-      let maybeSection = Object.keys(sections)
+      const maybeSection = Object.keys(sections)
                                .filter( k => lines[i] === k + ':' );
 
       if ( maybeSection.length === 1 ) {
-        let section = maybeSection[0];
+        const section = maybeSection[0];
         i++;
 
         for ( ; i < lines.length && lines[i] !== ''; i++ ) {

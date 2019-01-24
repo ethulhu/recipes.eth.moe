@@ -6,11 +6,11 @@ class Menu {
   }
 
   static parse( text ) {
-    let lines = text.split( '\n' );
+    const lines = text.split( '\n' );
 
-    let items = lines.filter( line => line !== '' )
+    const items = lines.filter( line => line !== '' )
                      .map( line => {
-		       let parts = line.split( ': ' );
+		       const parts = line.split( ': ' );
 		       return {
 		         name: parts[0],
 		         path: parts[1],

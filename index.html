@@ -64,11 +64,11 @@ handleEvent( 'input.doable', 'change', e => e.target
 // Page render-funcs.
 
 function renderMenu( text ) {
-  let menu = Menu.parse( text );
+  const menu = Menu.parse( text );
 
   document.title = 'recipes';
 
-  let render = Elems.renderFuncForSelector( 'main' );
+  const render = Elems.renderFuncForSelector( 'main' );
   render(
     _h1( 'recipes' ),
     _nav(
@@ -85,11 +85,11 @@ function renderMenu( text ) {
 }
 
 function renderRecipe( text ) {
-  let recipe = Recipe.parse( text );
+  const recipe = Recipe.parse( text );
 
   document.title = 'recipes - ' + recipe.name;
 
-  let render = Elems.renderFuncForSelector( 'main' );
+  const render = Elems.renderFuncForSelector( 'main' );
   render(
     _a ( { href: '#' }, '>back' ),
     _h1( recipe.name ),
@@ -116,7 +116,7 @@ function renderPage() {
   if ( ! window.location.hash ) {
     load( './recipes.list', renderMenu );
   } else {
-    let name = window.location.hash.slice( 1 );
+    const name = window.location.hash.slice( 1 );
     load( './recipes/' + name, renderRecipe );
   }
 }
