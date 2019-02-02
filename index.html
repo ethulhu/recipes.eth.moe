@@ -123,7 +123,7 @@ function renderRecipe( text ) {
       );
 
   render(
-    _a ( { href: '#' }, '>back' ),
+    _a ( { href: '#' }, 'home' ),
     _h1( recipe.name ),
     ['needs', 'steps'].map( key =>
       newDoableSection( key, recipe[ key ] )
