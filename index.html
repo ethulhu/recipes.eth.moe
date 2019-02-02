@@ -38,29 +38,6 @@ function handleEvent( querySelector, event, handlerFunc ) {
   } );
 }
 
-// DoableSection.
-
-function newDoableItem( text ) {
-  return _li(
-           _label(
-             _input( { type: 'checkbox', class: 'doable' } ),
-             _span( text ),
-           )
-         );
-}
-function newDoableSection( title, items ) {
-  return _section(
-           _h2( title ),
-           _ul( { class: 'doable' },
-             items.map( newDoableItem ),
-           ),
-         );
-}
-handleEvent( 'input.doable', 'change', e => e.target
-                                             .parentElement
-                                             .classList
-                                             .toggle( 'done' ) );
-
 // Page render-funcs.
 
 function renderMenu( text ) {
@@ -84,12 +61,67 @@ function renderMenu( text ) {
   );
 }
 
+Storage.prototype.putObject =
+  ( k, v ) => localStorage.setItem( k, JSON.stringify( v ) );
+
+Storage.prototype.getObject =
+  k => JSON.parse( localStorage.getItem( k ) || 'null' );
+
+// object = {
+//   lastRead: epochTime,
+//   needs: { string, bool },
+//   steps: { string, bool },
+// }
+function modifyState( recipeName, modifyFunc ) {
+  const path = 'recipes:' + recipeName;
+  let state = localStorage.getObject( path ) ||
+              { lastRead: Date.now(), needs: {}, steps: {} };
+  modifyFunc( state );
+  state.lastRead = Date.now();
+  localStorage.putObject( path, state );
+  return state;
+}
+function setDoable( recipe, section, doable, done ) {
+  modifyState( recipe, state => {
+    state[ section ][ doable ] = done;
+  } );
+}
+
 function renderRecipe( text ) {
   const recipe = Recipe.parse( text );
+  const state = modifyState( recipe.name, s => s );
 
   document.title = 'recipes - ' + recipe.name;
 
   const render = Elems.renderFuncForSelector( 'main' );
+
+  const newDoableSection =
+    ( title, items ) =>
+      _section(
+        _h2( title ),
+        _ul(
+          { class: 'doable' },
+          items.map( text =>
+            _li(
+              _label(
+                { class:
+                    state[ title ][ text ] ?  'done' : '' },
+                _input(
+                  { type: 'checkbox' },
+                  { class: 'doable' },
+                  { checked:
+                      state[ title ][ text ] ? true : null },
+                  { recipe: recipe.name },
+                  { section: title },
+                  { doable: text },
+                ),
+                _span( text ),
+              )
+            )
+          ),
+        ),
+      );
+
   render(
     _a ( { href: '#' }, '>back' ),
     _h1( recipe.name ),
@@ -98,6 +130,16 @@ function renderRecipe( text ) {
     ),
   );
 }
+handleEvent( 'input.doable', 'change', e => {
+  e.target.parentElement.classList.toggle( 'done' );
+
+  setDoable(
+    e.target.getAttribute( 'recipe' ),
+    e.target.getAttribute( 'section' ),
+    e.target.getAttribute( 'doable' ),
+    e.target.parentElement.classList.contains( 'done' )
+  );
+} );
 
 // Loaders.
 
