@@ -1,6 +1,6 @@
 'use strict';
 
-class Recipe {
+export class Recipe {
   constructor (name, notes, needs, steps) {
     this.name = name;
     this.notes = notes;

@@ -1,6 +1,6 @@
 'use strict';
 
-class Menu {
+export class Menu {
   constructor( items)  {
     this.items = items;
   }

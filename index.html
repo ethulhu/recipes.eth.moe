@@ -2,9 +2,6 @@
 <head>
   <meta charset='utf-8'>
   <title>recipes</title>
-  <script src='./elems.js'></script>
-  <script src='./menu.js'></script>
-  <script src='./recipe.js'></script>
   <meta name='viewport'
         content='width=device-width, initial-scale=1.0'>
   <style>
@@ -47,8 +44,12 @@
   <main>
   </main>
 
-<script>
+<script type='module'>
 'use strict';
+
+import { Elems } from './elems.mjs';
+import { Menu } from './menu.mjs';
+import { Recipe } from './recipe.mjs';
 
 // Setup.
 

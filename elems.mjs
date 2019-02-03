@@ -10,7 +10,7 @@
 //   );
 'use strict';
 
-const Elems = {
+export const Elems = {
   elem: function( ...args ) {
     const elem = document.createElement( this );
 
