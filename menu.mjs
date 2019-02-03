@@ -6,16 +6,10 @@ export class Menu {
   }
 
   static parse( text ) {
-    const lines = text.split( '\n' );
+    const menu = JSON.parse( text );
 
-    const items = lines.filter( line => line !== '' )
-                     .map( line => {
-		       const parts = line.split( ': ' );
-		       return {
-		         name: parts[0],
-		         path: parts[1],
-		       }
-		     } );
+    const items = Object.keys( menu.files ).map(
+      k => ({ name: k, path: menu.files[ k ] } ));
 
     return new Menu( items );
   }

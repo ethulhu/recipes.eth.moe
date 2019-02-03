@@ -209,7 +209,7 @@ function load( path, renderFunc ) {
 
 function renderPage() {
   if ( ! window.location.hash ) {
-    load( './recipes.list', renderMenu );
+    load( './recipes.json', renderMenu );
   } else {
     const name = window.location.hash.slice( 1 );
     load( './recipes/' + name, renderRecipe );
