@@ -4,6 +4,12 @@
   <title>recipes</title>
   <meta name='viewport'
         content='width=device-width, initial-scale=1.0'>
+  <link rel='icon' href='./icon.png'>
+   <!-- Add to home screen for Safari on iOS -->
+  <meta name='apple-mobile-web-app-capable' content='yes'>
+  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
+  <meta name='apple-mobile-web-app-title' content='Recipes'>
+  <link rel='apple-touch-icon' href='./icon.png'>
   <style>
     body {
       font-family: sans-serif;
@@ -78,13 +84,15 @@ function renderMenu( text ) {
   render(
     _h1( 'recipes' ),
     _nav(
-      menu.items.map(
-        item => _li(
-                  _a(
-                    item.name,
-                    { href: '#' + item.path },
+      _ul(
+        menu.items.map(
+          item => _li(
+                    _a(
+                      item.name,
+                      { href: '#' + item.path },
+                    )
                   )
-                )
+        )
       )
     )
   );
