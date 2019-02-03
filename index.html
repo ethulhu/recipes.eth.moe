@@ -30,9 +30,13 @@
       padding: 0;
     }
     ul.doable span {
-      padding-left: 0.5ch;
+      padding-left: 0.5ch;  // Moves it away from the bullet.
     }
-    .done {
+    label:not(.done):hover {
+      text-decoration: line-through;
+      color: #BBB;
+    }
+    label.done {
       text-decoration: line-through;
       color: #BBB;
     }
