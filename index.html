@@ -123,7 +123,17 @@ function renderRecipe( text ) {
       );
 
   render(
-    _a ( { href: '#' }, 'home' ),
+    _a(
+      'home',
+      { href: '#' },
+    ),
+    ' ',
+    _a(
+      'reset',
+      { id: 'reset' },
+      { href: window.location.hash },
+      { recipe: recipe.name },
+    ),
     _h1( recipe.name ),
     ['needs', 'steps'].map( key =>
       newDoableSection( key, recipe[ key ] )
@@ -139,6 +149,12 @@ handleEvent( 'input.doable', 'change', e => {
     e.target.getAttribute( 'doable' ),
     e.target.parentElement.classList.contains( 'done' )
   );
+} );
+handleEvent( '#reset', 'click', e => {
+  modifyState( e.target.getAttribute( 'recipe' ), s => {
+    s.steps = {};
+    s.needs = {};
+  } );
 } );
 
 // Loaders.
