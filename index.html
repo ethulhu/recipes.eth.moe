@@ -122,7 +122,13 @@ function setDoable( recipe, section, doable, done ) {
 
 function renderRecipe( text ) {
   const recipe = Recipe.parse( text );
-  const state = modifyState( recipe.name, s => s );
+  const state = modifyState( recipe.name, state => {
+    const DAY = 1000 * 60 * 60 * 24;
+    if ( ( Date.now() - new Date(state.lastRead) ) > ( 7 * DAY ) ) {
+      state.needs = {};
+      state.steps = {};
+    }
+  } );
 
   document.title = 'recipes - ' + recipe.name;
 
