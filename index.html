@@ -81,6 +81,9 @@ function handleEvent( querySelector, event, handlerFunc ) {
 
 // Page render-funcs.
 
+// renderRecipeList is constructed inside renderMenu.
+let renderRecipeList = query => {};
+
 function renderMenu( text ) {
   const menu = Menu.parse( text );
 
@@ -89,20 +92,53 @@ function renderMenu( text ) {
   const render = Elems.renderFuncForSelector( 'main' );
   render(
     _h1( 'recipes' ),
+    _input(
+      { id: 'search' },
+      { style: 'visibility: hidden; display: none;' },
+      { autocomplete: 'off' },
+    ),
     _nav(
       _ul(
-        menu.items.map(
-          item => _li(
-                    _a(
-                      item.name,
-                      { href: '#' + item.path },
-                    )
-                  )
-        )
+        { id: 'recipeList' },
       )
     )
   );
+
+  renderRecipeList = query => {
+    const render = Elems.renderFuncForSelector( '#recipeList' );
+    render( menu.items.filter( item => item.name.includes( query ) )
+                      .map( item => _li(
+                                      { class: 'recipe' },
+                                      _a(
+                                        item.name,
+                                        { href: '#' + item.path },
+                                      )
+                                    ) ) );
+  };
+
+  renderRecipeList( '' );
 }
+handleEvent( 'body', 'keydown', e => {
+  if ( e.keyCode === 191 ) {  // '/'
+    e.preventDefault();  // Don't send '/';
+    let search = document.querySelector( '#search' )
+    search.style.visibility = 'visible';
+    search.style.display = 'block';
+    search.focus();
+  }
+} );
+handleEvent( '#search', 'keyup', e => {
+  if ( e.keyCode === 27 ) {  // ESC.
+    e.preventDefault();
+    let search = document.querySelector( '#search' )
+    search.style.visibility = 'hidden';
+    search.style.display = 'none';
+    e.target.parentElement.focus();
+    e.target.value = '';
+  }
+  const query = e.target.value;
+  renderRecipeList( query );
+} );
 
 Storage.prototype.putObject =
   ( k, v ) => localStorage.setItem( k, JSON.stringify( v ) );
