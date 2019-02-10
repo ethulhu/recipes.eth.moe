@@ -59,7 +59,17 @@ Elems.register( {
     toObject: window,
     withNameFunc: n => '_' + n,
   },
-  'nav', 'a', 'h1', 'li', 'h2', 'section', 'label', 'input', 'ul', 'span');
+  'a',
+  'h1',
+  'h2',
+  'input',
+  'label',
+  'li',
+  'nav',
+  'section',
+  'span',
+  'ul'
+);
 
 function handleEvent( querySelector, event, handlerFunc ) {
   window.addEventListener( event, e => {
