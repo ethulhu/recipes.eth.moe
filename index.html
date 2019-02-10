@@ -52,6 +52,7 @@
 import { Elems } from './elems.mjs';
 import { Menu } from './menu.mjs';
 import { Recipe } from './recipe.mjs';
+import { Search } from './search.mjs';
 
 // Setup.
 
@@ -106,7 +107,8 @@ function renderMenu( text ) {
 
   renderRecipeList = query => {
     const render = Elems.renderFuncForSelector( '#recipeList' );
-    render( menu.items.filter( item => item.name.includes( query ) )
+    const match = Search.matcherFuncForQuery( query );
+    render( menu.items.filter( item => match( item.name ) )
                       .map( item => _li(
                                       { class: 'recipe' },
                                       _a(
