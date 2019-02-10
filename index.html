@@ -118,25 +118,26 @@ function renderMenu( text ) {
 
   renderRecipeList( '' );
 }
+document.onkeydown = e => {
+  if ( e.keyCode === 27 ) { e.preventDefault(); }  // No escape.
+};
 handleEvent( 'body', 'keydown', e => {
   if ( e.keyCode === 191 ) {  // '/'
     e.preventDefault();  // Don't send '/';
-    let search = document.querySelector( '#search' )
-    search.style.visibility = 'visible';
-    search.style.display = 'block';
+    const search = _input( { id: 'search', autocomplete: 'off' } );
+    const nav = document.querySelector( 'nav' )
+    nav.insertBefore( search, nav.firstChild );
     search.focus();
   }
 } );
 handleEvent( '#search', 'keyup', e => {
+  let query = e.target.value;
   if ( e.keyCode === 27 ) {  // ESC.
     e.preventDefault();
-    let search = document.querySelector( '#search' )
-    search.style.visibility = 'hidden';
-    search.style.display = 'none';
-    e.target.parentElement.focus();
-    e.target.value = '';
+    const search = document.querySelector( '#search' )
+    search.parentElement.removeChild( search );
+    query = '';
   }
-  const query = e.target.value;
   renderRecipeList( query );
 } );
 
