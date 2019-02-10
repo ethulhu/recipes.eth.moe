@@ -63,6 +63,8 @@ export const Elems = {
       let root = document.querySelector( querySelector );
       let render = this.elem.bind( root.tagName );
       let newRoot = render( args );
+      newRoot.id = root.id;
+      newRoot.classList = root.classList;
       root.parentElement.replaceChild( newRoot, root );
     };
   },
