@@ -121,11 +121,11 @@ function renderMenu( text ) {
   renderRecipeList( '' );
 }
 document.onkeydown = e => {
-  if ( e.keyCode === 27 ) { e.preventDefault(); }  // No escape.
+  if ( e.key === 'Escape' ) { e.preventDefault(); }
 };
 handleEvent( 'body', 'keydown', e => {
-  if ( e.keyCode === 191 ) {  // '/'
-    e.preventDefault();  // Don't send '/';
+  if ( e.key === '/' ) {
+    e.preventDefault();
     const search = _input( { id: 'search', autocomplete: 'off' } );
     const nav = document.querySelector( 'nav' )
     nav.insertBefore( search, nav.firstChild );
@@ -134,7 +134,7 @@ handleEvent( 'body', 'keydown', e => {
 } );
 handleEvent( '#search', 'keyup', e => {
   let query = e.target.value;
-  if ( e.keyCode === 27 ) {  // ESC.
+  if ( e.key === 'Escape' ) {
     e.preventDefault();
     const search = document.querySelector( '#search' )
     search.parentElement.removeChild( search );
