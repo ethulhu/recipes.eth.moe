@@ -8,6 +8,18 @@ export const Search = {
 		     true,
     );
   },
+
+  matchOneOfFuncForQuery: function( query ) {
+    const atoms = query.split( ' ' );
+    return items => atoms.reduce(
+		      ( acc, atom ) => acc &&
+                                       any(
+                                         items,
+                                         item =>
+                                           matches( item, atom ) ),
+		      true,
+    );
+  },
 };
 
 function matches( item, atom ) {
@@ -15,3 +27,5 @@ function matches( item, atom ) {
              .includes( atom );
 }
 
+const any =
+  ( items, func ) => items.filter( func ).length > 0;

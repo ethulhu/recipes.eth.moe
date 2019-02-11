@@ -107,8 +107,10 @@ function renderMenu( text ) {
 
   renderRecipeList = query => {
     const render = Elems.renderFuncForSelector( '#recipeList' );
-    const match = Search.matcherFuncForQuery( query );
-    render( menu.items.filter( item => match( item.name ) )
+    const match = Search.matchOneOfFuncForQuery( query );
+    render( menu.items.filter( item => match(
+                                         item.tags
+                                             .concat( item.name ) ) )
                       .map( item => _li(
                                       { class: 'recipe' },
                                       _a(

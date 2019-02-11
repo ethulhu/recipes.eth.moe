@@ -1,7 +1,8 @@
-// gen_list.mjs generates 'recipes.json'.
+#!/usr/bin/env node --experimental-modules
+// gen_menu.mjs generates 'recipes.json'.
 //
 //   $ node --experimental-modules \
-//          gen_list.mjs \
+//          gen_menu.mjs \
 //          recipes/* > recipes.json
 //
 import { Recipe } from './recipe.mjs';
@@ -31,7 +32,7 @@ Recipe.prototype.tokens = function() {
            .map( t => t.toLowerCase() )
            .filter( t => /^[a-z]/.test( t ) )
            .map( t => t.replace( /[^a-z0-9_-]/g, '' ) )
-	   .filter( t => t.length > 2 )  // pt, oz, ….
+           .filter( t => t.length > 2 )  // pt, oz, ….
            .sort()
            .uniq();
 };
@@ -50,7 +51,10 @@ let index = {};
 
 index.files = {};
 files.forEach(
-  ( f, i ) => index.files[ recipes[i].name ] = f.basename()
+  ( f, i ) => index.files[ recipes[i].name ] = ({
+          path: f.basename(),
+          tags: recipes[i].tags,
+  })
 );
 
 index.words = {};

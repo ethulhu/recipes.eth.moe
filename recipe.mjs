@@ -1,8 +1,9 @@
 'use strict';
 
 export class Recipe {
-  constructor (name, notes, needs, steps) {
+  constructor (name, tags, notes, needs, steps) {
     this.name = name;
+    this.tags = tags;
     this.notes = notes;
     this.needs = needs;
     this.steps = steps;
@@ -21,6 +22,7 @@ export class Recipe {
     i++;
 
     const sections = {
+      tags: [],
       notes: [],
       needs: [],
       steps: [],
@@ -29,7 +31,13 @@ export class Recipe {
     for (;;) {
       for ( ; i < lines.length && lines[i] === ''; i++ ) {}
       if ( i == lines.length ) {
-        return new Recipe(name, sections.notes, sections.needs, sections.steps); 
+        return new Recipe(
+                name,
+                sections.tags,
+                sections.notes,
+                sections.needs,
+                sections.steps,
+        );
       }
 
       const maybeSection = Object.keys(sections)
