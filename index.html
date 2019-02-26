@@ -49,17 +49,14 @@
 <script type='module'>
 'use strict';
 
-import { Elems } from './elems.mjs';
-import { Menu } from './menu.mjs';
+import { Elems  } from './elems.mjs';
+import { Menu   } from './menu.mjs';
 import { Recipe } from './recipe.mjs';
 import { Search } from './search.mjs';
 
 // Setup.
 
-Elems.register( {
-    toObject: window,
-    withNameFunc: n => '_' + n,
-  },
+[
   'a',
   'h1',
   'h2',
@@ -70,7 +67,7 @@ Elems.register( {
   'section',
   'span',
   'ul'
-);
+].forEach( tag => window[ '_' + tag ] = Elems.elem( tag ) );
 
 function handleEvent( querySelector, event, handlerFunc ) {
   window.addEventListener( event, e => {
