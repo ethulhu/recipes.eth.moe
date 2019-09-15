@@ -7,7 +7,7 @@
   <link rel='icon' href='./icon.png'>
    <!-- Add to home screen for Safari on iOS -->
   <meta name='apple-mobile-web-app-capable' content='yes'>
-  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
+  <meta name='apple-mobile-web-app-status-bar-style' content='white'>
   <meta name='apple-mobile-web-app-title' content='Recipes'>
   <link rel='apple-touch-icon' href='./icon.png'>
   <style>
@@ -118,6 +118,12 @@ function renderMenu( text ) {
   };
 
   renderRecipeList( '' );
+
+  caches.open( 'default' )
+        .then(
+          cache =>
+            cache.addAll( menu.items.map( i => `/recipes/${i.path}` ) ) )
+        .catch( console.error );
 }
 document.onkeydown = e => {
   if ( e.key === 'Escape' ) { e.preventDefault(); }
@@ -268,6 +274,11 @@ function renderPage() {
 window.addEventListener( 'popstate', renderPage ); // Refresh on history or URL change.
 renderPage();
 
+if ( 'serviceWorker' in navigator ) {
+  navigator.serviceWorker
+           .register( './service-worker.js' )
+           .catch( console.error );
+}
 </script>
 </body>
 </html>
