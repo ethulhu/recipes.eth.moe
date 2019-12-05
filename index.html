@@ -35,7 +35,7 @@
     ul.doable span {
       padding-left: 0.5ch;  // Moves it away from the bullet.
     }
-    label.done {
+    input[type=checkbox]:checked + label {
       text-decoration: line-through;
       color: #BBB;
     }
@@ -196,20 +196,19 @@ function renderRecipe( text ) {
           { class: 'doable' },
           items.map( text =>
             _li(
+              _input(
+                { type: 'checkbox' },
+                { checked:
+                    state[ title ][ text ] ? true : null },
+                { recipe: recipe.name },
+                { section: title },
+                { doable: text },
+		{ id: text.replace( ' ', '_' ) },
+              ),
               _label(
-                { class:
-                    state[ title ][ text ] ?  'done' : '' },
-                _input(
-                  { type: 'checkbox' },
-                  { class: 'doable' },
-                  { checked:
-                      state[ title ][ text ] ? true : null },
-                  { recipe: recipe.name },
-                  { section: title },
-                  { doable: text },
-                ),
-                _span( text ),
-              )
+		{ for: text.replace( ' ', '_' ) },
+	        text,
+              ),
             )
           ),
         ),
@@ -233,7 +232,7 @@ function renderRecipe( text ) {
     ),
   );
 }
-handleEvent( 'input.doable', 'change', e => {
+handleEvent( 'input[doable]', 'change', e => {
   e.target.parentElement.classList.toggle( 'done' );
 
   setDoable(
