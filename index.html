@@ -154,35 +154,10 @@ Storage.prototype.putObject =
 Storage.prototype.getObject =
   k => JSON.parse( localStorage.getItem( k ) || 'null' );
 
-// object = {
-//   lastRead: epochTime,
-//   needs: { string, bool },
-//   steps: { string, bool },
-// }
-function modifyState( recipeName, modifyFunc ) {
-  const path = 'recipes:' + recipeName;
-  let state = localStorage.getObject( path ) ||
-              { lastRead: Date.now(), needs: {}, steps: {} };
-  modifyFunc( state );
-  state.lastRead = Date.now();
-  localStorage.putObject( path, state );
-  return state;
-}
-function setDoable( recipe, section, doable, done ) {
-  modifyState( recipe, state => {
-    state[ section ][ doable ] = done;
-  } );
-}
+const idForItem = ( recipe, section, index, text ) => btoa( (new TextEncoder()).encode( `/${recipe}/${section}/${index}/${text}` ) );
 
 function renderRecipe( text ) {
   const recipe = Recipe.parse( text );
-  const state = modifyState( recipe.name, state => {
-    const DAY = 1000 * 60 * 60 * 24;
-    if ( ( Date.now() - new Date(state.lastRead) ) > ( 7 * DAY ) ) {
-      state.needs = {};
-      state.steps = {};
-    }
-  } );
 
   document.title = 'recipes - ' + recipe.name;
 
@@ -194,23 +169,21 @@ function renderRecipe( text ) {
         _h2( title ),
         _ul(
           { class: 'doable' },
-          items.map( text =>
-            _li(
+	  items.map( ( text, i ) => {
+	    const id = idForItem( recipe.name, title, i, text );
+	    const checked = localStorage.getObject( id );
+	    return _li(
               _input(
                 { type: 'checkbox' },
-                { checked:
-                    state[ title ][ text ] ? true : null },
-                { recipe: recipe.name },
-                { section: title },
-                { doable: text },
-		{ id: text.replace( ' ', '_' ) },
+		{ id: id },
+		{ checked: checked },
               ),
               _label(
-		{ for: text.replace( ' ', '_' ) },
+		{ for: id },
 	        text,
               ),
-            )
-          ),
+            );
+	  } ),
         ),
       );
 
@@ -232,21 +205,13 @@ function renderRecipe( text ) {
     ),
   );
 }
-handleEvent( 'input[doable]', 'change', e => {
-  e.target.parentElement.classList.toggle( 'done' );
-
-  setDoable(
-    e.target.getAttribute( 'recipe' ),
-    e.target.getAttribute( 'section' ),
-    e.target.getAttribute( 'doable' ),
-    e.target.parentElement.classList.contains( 'done' )
-  );
+handleEvent( 'input[type=checkbox]', 'change', e => {
+  localStorage.putObject( e.target.id, e.target.checked );
 } );
 handleEvent( '#reset', 'click', e => {
-  modifyState( e.target.getAttribute( 'recipe' ), s => {
-    s.steps = {};
-    s.needs = {};
-  } );
+  document.querySelectorAll( 'input[type=checkbox]' )
+          .forEach( input => { localStorage.removeItem( input.id ); } );
+  renderPage();
 } );
 
 // Loaders.
