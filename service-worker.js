@@ -1,13 +1,12 @@
 const currentCacheName = 'v1';
 
+// 
 const cacheFiles = [
-  '/',
-  '/elems.mjs',
-  '/icon.png',
   '/index.html',
-  '/menu.mjs',
-  '/recipe.mjs',
-  '/search.mjs',
+  '/icon.png',
+  '/tofu-rolls',
+  '/vegan-cake',
+  . . .
 ];
 
 
@@ -19,6 +18,8 @@ self.addEventListener( 'install', e => {
     );
 } );
 
+// TODO: remove files not in cacheFiles.
+// see `trimCache` at https://www.afasterweb.com/2017/01/31/upgrading-your-service-worker-cache/
 self.addEventListener( 'activate', e => {
     e.waitUntil(
         caches.keys().then( cacheNames =>

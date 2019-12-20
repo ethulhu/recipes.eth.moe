@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+
+from os import path
+import base64
+import dataclasses
+import json
+import sys
+import textwrap
+
+import yaml
+
+from typing import Any, Dict, List, Optional
+
+
+@dataclasses.dataclass
+class Recipe:
+    title: str
+    path: str
+    needs: List[str]
+    steps: List[str]
+
+    tags: List[str] = dataclasses.field(default_factory=list)
+    notes: List[str] = dataclasses.field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'Recipe':
+        for field in ('title', 'needs', 'steps', 'path'):
+            if field not in d:
+                raise ValueError(f'the recipe is missing {field}')
+        return cls(**d)
+
+    @classmethod
+    def from_path(cls, filepath: str) -> 'Recipe':
+        with open(filepath) as f:
+            bytes = f.read()
+        d = yaml.safe_load(bytes)
+        d['path'] = path.basename(filepath)
+        return cls.from_dict(d)
+
+
+def generate_recipe(recipe: Recipe) -> str:
+    def clickable(section: str, item: str) -> str:
+        id = base64.b64encode(
+            f'{recipe.title}/{section}/{item}'.encode()).decode()
+        return textwrap.dedent(f'''
+                <li>
+                    <input type='checkbox' id='{id}' />
+                    <label for='{id}'>{item}</label>
+                </li>
+        ''').strip()
+
+    return textwrap.dedent(f'''
+            <!DOCTYPE html>
+            <html lang='en'>
+                <head>
+                    <meta charset='utf-8'>
+                    <title>{recipe.title}</title>
+                    <style>
+                        body {{
+                            font-family: sans-serif;
+                            font-size: 14pt;
+                        }}
+                        input[type=checkbox]:checked + label {{
+                            text-decoration: line-through;
+                            color: #BBB;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <nav>
+                        <a href='/'>home</a>
+                        <button id='reset'>reset</button>
+                    </nav>
+                    <h1>{recipe.title}</h1>
+                    <section id='needs'>
+                        <h2>needs</h2>
+                        <ul>
+                            {''.join([clickable('needs', n) for n in recipe.needs])}
+                        </ul>
+                    </section>
+                    <section id='steps'>
+                        <h2>steps</h2>
+                        <ol>
+                            {''.join([clickable('steps', s) for s in recipe.steps])}
+                        </ol>
+                    </section>
+                    <script type='module'>
+                        Storage.prototype.putValue = function( k, v ) {{
+                            this.setItem( k, JSON.stringify( v ) );
+                        }};
+                        Storage.prototype.getValue = function( k ) {{
+                            return JSON.parse( this.getItem( k ) || 'null' );
+                        }};
+
+                        document.querySelectorAll( 'input[type=checkbox]' ).forEach(
+                            input => {{
+                                input.checked = localStorage.getValue( input.id );
+                                input.addEventListener( 'change', e => {{
+                                    localStorage.putValue( e.target.id, e.target.checked );
+                                }} );
+                            }}
+                        );
+
+                        document.querySelector( '#reset' ).addEventListener( click, () => {{
+                            document.querySelectorAll( 'input[type=checkbox]'.forEach(
+                                input => {{
+                                    input.checked = null;
+                                    localStorage.removeItem( input.id );
+                                }}
+                            );
+                        }} );
+                    </script>
+                </body>
+            </html>
+    ''').strip()
+
+
+def generate_index(recipes: List[Recipe]) -> str:
+    def link(recipe: Recipe) -> str:
+        return f"<li><a href='{recipe.path}'>{recipe.title}</a></li>"
+
+    tags = dict((r.path, r.tags + r.title.split(' ')) for r in recipes)
+
+    return textwrap.dedent(f'''
+            <!DOCTYPE html>
+            <html lang='en'>
+                <head>
+                    <meta charset='utf-8'>
+                    <title>recipes</title>
+                    <style>
+                        body {{
+                            font-family: sans-serif;
+                            font-size: 14pt;
+                        }}
+                        a {{
+                            color: #AAA;
+                            transition-duration: 0.1s;
+                            transition-timing-function: ease-in-out;
+                        }}
+                        a.visited {{
+                            color: #AAA;
+                        }}
+                        a:hover {{
+                            color: #99F;
+                        }}
+                        .greyed, .greyed a {{
+                            color: #888;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h1>recipes</h1>
+                    <nav>
+                        <ul>
+                            {''.join([link(r) for r in recipes])}                            
+                        </ul>
+                    </nav>
+                    <script type='module'>
+                        const pathToTags = {json.dumps(tags)};
+                        const matches = ( tokens, path ) =>
+                            tokens.every( t => pathToTags[ path ].some( tag => tag.includes( t ) ) );
+
+                        window.addEventListener( 'keydown', e => {{
+                            if ( e.key === '/' ) {{
+                                e.preventDefault();
+                                const search = document.createElement( 'input' );
+                                search.id = 'search';
+                                search.autocomplete = 'off';
+
+                                search.addEventListener( 'keyup', e => {{
+                                    const search = e.target;
+                                    const nav = search.parentElement;
+
+                                    if ( e.key === 'Escape' ) {{
+                                        e.preventDefault();
+                                        nav.querySelectorAll( 'li' ).forEach(
+                                            li => li.classList.remove( 'greyed' )
+                                        );
+                                        nav.removeChild( search );
+                                        return;
+                                    }}
+
+                                    const query = e.target.value;
+                                    if ( query === '' ) {{
+                                        nav.querySelectorAll( 'li' ).forEach(
+                                            li => li.classList.remove( 'greyed' )
+                                        );
+                                        return;
+                                    }}
+                                    const tokens = query.split( ' ' );
+                                    nav.querySelectorAll( 'li:not(.greyed)' ).forEach( 
+                                        li => {{ if ( ! matches( tokens, li.querySelector( 'a' ).getAttribute( 'href' ) ) ) {{ li.classList.add( 'greyed' ); }} }}
+                                    );
+                                }} );
+
+                                const nav = document.querySelector( 'nav' );
+                                nav.insertBefore( search, nav.firstChild );
+                                search.focus();
+                            }}
+                        }} );
+                    </script>
+                </body>
+            </html>
+    ''').strip()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print(f'usage: {sys.argv[0]} (index|recipe)')
+        sys.exit(1)
+
+    command = sys.argv[1]
+
+    if command == 'recipe':
+        if len(sys.argv) != 3:
+            print(f'usage: {sys.argv[0]} recipe <path to recipe>')
+            sys.exit(1)
+
+        src = sys.argv[2]
+
+        recipe = Recipe.from_path(src)
+
+        print(generate_recipe(recipe))
+
+    if command == 'index':
+        if len(sys.argv) < 3:
+            print(f'usage: {sys.argv[0]} index <paths to recipes>')
+            sys.exit(1)
+
+        srcs = sys.argv[2:]
+        recipes = [Recipe.from_path(src) for src in srcs]
+        recipes.sort(key=lambda recipe: recipe.title.lower())
+
+        print(generate_index(recipes))

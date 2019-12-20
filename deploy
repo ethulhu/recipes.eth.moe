@@ -1,7 +1,0 @@
-#!/bin/sh
-
-SRCS='elems.mjs icon.png index.html menu.mjs recipe.mjs recipes recipes.json search.mjs service-worker.js'
-
-DEST='mari:/var/www/recipes.eth.moe'
-
-rsync -av ${SRCS} "${DEST}"
