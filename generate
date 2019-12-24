@@ -8,6 +8,7 @@ import sys
 import textwrap
 
 import yaml
+import jinja2
 
 from typing import Any, Dict, List, Optional
 
@@ -38,191 +39,266 @@ class Recipe:
         return cls.from_dict(d)
 
 
-def generate_recipe(recipe: Recipe) -> str:
-    def clickable(section: str, item: str) -> str:
-        id = base64.b64encode(
-            f'{recipe.title}/{section}/{item}'.encode()).decode()
-        return textwrap.dedent(f'''
-                <li>
-                    <input type='checkbox' id='{id}' />
-                    <label for='{id}'>{item}</label>
-                </li>
-        ''').strip()
+RECIPE = '''
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>{{ recipe.title }}</title>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <link rel='icon' href='./icon.png'>
+        {% include 'ios_app' %}
+        <style>
+            {% include 'css' %}
 
-    return textwrap.dedent(f'''
-            <!DOCTYPE html>
-            <html lang='en'>
-                <head>
-                    <meta charset='utf-8'>
-                    <title>{recipe.title}</title>
-                    <style>
-                        body {{
-                            font-family: sans-serif;
-                            font-size: 14pt;
-                        }}
-                        input[type=checkbox]:checked + label {{
-                            text-decoration: line-through;
-                            color: #BBB;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <nav>
-                        <a href='/'>home</a>
-                        <button id='reset'>reset</button>
-                    </nav>
-                    <h1>{recipe.title}</h1>
-                    <section id='needs'>
-                        <h2>needs</h2>
-                        <ul>
-                            {''.join([clickable('needs', n) for n in recipe.needs])}
-                        </ul>
-                    </section>
-                    <section id='steps'>
-                        <h2>steps</h2>
-                        <ol>
-                            {''.join([clickable('steps', s) for s in recipe.steps])}
-                        </ol>
-                    </section>
-                    <script type='module'>
-                        Storage.prototype.putValue = function( k, v ) {{
-                            this.setItem( k, JSON.stringify( v ) );
-                        }};
-                        Storage.prototype.getValue = function( k ) {{
-                            return JSON.parse( this.getItem( k ) || 'null' );
-                        }};
+            input[type=checkbox]:checked + label {
+                text-decoration: line-through;
+                color: #BBB;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <a href='/'>home</a>
+            <button id='reset'>reset</button>
+        </nav>
+        <h1>{{ recipe.title }}</h1>
+        <section>
+            <h2>needs</h2>
+            <ul>
+                {%- for item in recipe.needs %}
+                    {%- set id = [recipe.title, 'needs', item] | join('/') | base64 %}
+                    <li>
+                        <input type='checkbox' id='{{ id }}'>
+                        <label for='{{ id }}'>{{ item }}</label>
+                    </li>
+                {%- endfor %}
+            </ul>
+        </section>
+        <section>
+            <h2>steps</h2>
+            <ol>
+                {%- for item in recipe.steps -%}
+                    {%- set id = [recipe.title, 'steps', item] | join('/') | base64 %}
+                    <li>
+                        <input type='checkbox' id='{{ id }}'>
+                        <label for='{{ id }}'>{{ item }}</label>
+                    </li>
+                {%- endfor %}
+            </ol>
+        </section>
+        <script type='module'>
+            Storage.prototype.putValue = function( k, v ) {
+                this.setItem( k, JSON.stringify( v ) );
+            };
+            Storage.prototype.getValue = function( k ) {
+                return JSON.parse( this.getItem( k ) || 'null' );
+            };
 
-                        document.querySelectorAll( 'input[type=checkbox]' ).forEach(
-                            input => {{
-                                input.checked = localStorage.getValue( input.id );
-                                input.addEventListener( 'change', e => {{
-                                    localStorage.putValue( e.target.id, e.target.checked );
-                                }} );
-                            }}
-                        );
+            document.querySelectorAll( 'input[type=checkbox]' ).forEach(
+                input => {
+                    input.checked = localStorage.getValue( input.id );
+                    input.addEventListener( 'change', e => {
+                        localStorage.putValue( e.target.id, e.target.checked );
+                    } );
+                }
+            );
 
-                        document.querySelector( '#reset' ).addEventListener( click, () => {{
-                            document.querySelectorAll( 'input[type=checkbox]'.forEach(
-                                input => {{
-                                    input.checked = null;
-                                    localStorage.removeItem( input.id );
-                                }}
+            document.querySelector( '#reset' ).addEventListener( 'click', () => {
+                document.querySelectorAll( 'input[type=checkbox]' ).forEach(
+                    input => {
+                        input.checked = null;
+                        localStorage.removeItem( input.id );
+                    }
+                )
+            } );
+
+            {% include 'service_worker' %}
+        </script>
+    </body>
+</html>
+'''
+
+TEMPLATES = {
+    'service_worker': '''
+        if ( 'standalone' in navigator && navigator.standalone ) {
+            document.querySelectorAll( 'a' ).forEach( a => {
+                a.addEventListener( 'click', e => {
+                    e.preventDefault();
+                    window.location.href = e.target.href;
+                } );
+            } );
+        }
+
+        if ( 'serviceWorker' in navigator ) {
+            navigator.serviceWorker
+                     .register( './service-worker.js' )
+                     .catch( console.error );
+        }
+    ''',
+    'css': '''
+        body {
+            font-family: sans-serif;
+            font-size: 14pt;
+        }
+        a {
+            color: #AAA;
+            transition-duration: 0.1s;
+            transition-timing-function: ease-in-out;
+        }
+        a.visited {
+            color: #AAA;
+        }
+        a:hover {
+            color: #99F;
+        }
+    ''',
+    'ios_app': '''
+        <meta name='apple-mobile-web-app-capable' content='yes'>
+        <meta name='apple-mobile-web-app-status-bar-style' content='default'>
+        <meta name='apple-mobile-web-app-title' content='Recipes'>
+        <link rel='apple-touch-icon' href='./icon.png'>
+    '''
+}
+
+SERVICE_WORKER = '''
+const currentCacheName = 'v1';
+const cacheFiles = [
+  '/',
+  '/index.html',
+  '/icon.png',
+  {% for recipe in recipes %}
+    '{{ recipe.path }}',
+  {% endfor %}
+];
+
+self.addEventListener( 'install', e => {
+  e.waitUntil(
+      caches.open( currentCacheName ).then( cache => {
+          return cache.addAll( cacheFiles );
+      } )
+  );
+} );
+
+self.addEventListener( 'activate', e => {
+  e.waitUntil(
+      caches.keys().then( cacheNames =>
+          Promise.all( cacheNames.map( name => {
+              if ( name !== currentCacheName ) {
+                  return caches.delete( name );
+              }
+          } ) )
+      )
+  );
+
+  return self.clients.claim();
+} );
+
+self.addEventListener( 'fetch', e => {
+  e.respondWith(
+    fetch( e.request ).then(
+      response => caches.open( currentCacheName )
+                        .then( cache => cache.put( e.request, response.clone() ) )
+                        .then( () => response ) )
+                        .catch( () => caches.match( e.request ) )
+  );
+} );
+'''
+
+
+INDEX = '''
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <meta charset='utf-8'>
+        <title>recipes</title>
+        <link rel='icon' href='./icon.png'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <style>
+            {% include 'css' %}
+
+            .greyed, .greyed a {
+                color: #888;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>recipes</h1>
+        <nav>
+            <ul>
+                {%- for recipe in recipes %}
+                    <li><a href='{{ recipe.path }}'>{{ recipe.title }}</a></li>
+                {%- endfor %}
+            </ul>
+        </nav>
+        <script type='module'>
+            const pathToTags = {{ tags | json }};
+            const matches = ( tokens, path ) =>
+                tokens.every( t => pathToTags[ path ].some( tag => tag.includes( t ) ) );
+
+            window.addEventListener( 'keydown', e => {
+                if ( e.key === '/' ) {
+                    e.preventDefault();
+                    const search = document.createElement( 'input' );
+                    search.id = 'search';
+                    search.autocomplete = 'off';
+
+                    search.addEventListener( 'keyup', e => {
+                        const search = e.target;
+                        const nav = search.parentElement;
+
+                        if ( e.key === 'Escape' ) {
+                            e.preventDefault();
+                            nav.querySelectorAll( 'li' ).forEach(
+                                li => li.classList.remove( 'greyed' )
                             );
-                        }} );
-                    </script>
-                </body>
-            </html>
-    ''').strip()
+                            nav.removeChild( search );
+                            return;
+                        }
 
+                        const query = e.target.value;
+                        if ( query === '' ) {
+                            nav.querySelectorAll( 'li' ).forEach(
+                                li => li.classList.remove( 'greyed' )
+                            );
+                            return;
+                        }
+                        const tokens = query.split( ' ' );
+                        nav.querySelectorAll( 'li:not(.greyed)' ).forEach( 
+                            li => { if ( ! matches( tokens, li.querySelector( 'a' ).getAttribute( 'href' ) ) ) { li.classList.add( 'greyed' ); } }
+                        );
+                    } );
 
-def generate_index(recipes: List[Recipe]) -> str:
-    def link(recipe: Recipe) -> str:
-        return f"<li><a href='{recipe.path}'>{recipe.title}</a></li>"
+                    const nav = document.querySelector( 'nav' );
+                    nav.insertBefore( search, nav.firstChild );
+                    search.focus();
+                }
+            } );
 
-    tags = dict((r.path, r.tags + r.title.split(' ')) for r in recipes)
-
-    return textwrap.dedent(f'''
-            <!DOCTYPE html>
-            <html lang='en'>
-                <head>
-                    <meta charset='utf-8'>
-                    <title>recipes</title>
-                    <style>
-                        body {{
-                            font-family: sans-serif;
-                            font-size: 14pt;
-                        }}
-                        a {{
-                            color: #AAA;
-                            transition-duration: 0.1s;
-                            transition-timing-function: ease-in-out;
-                        }}
-                        a.visited {{
-                            color: #AAA;
-                        }}
-                        a:hover {{
-                            color: #99F;
-                        }}
-                        .greyed, .greyed a {{
-                            color: #888;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <h1>recipes</h1>
-                    <nav>
-                        <ul>
-                            {''.join([link(r) for r in recipes])}                            
-                        </ul>
-                    </nav>
-                    <script type='module'>
-                        const pathToTags = {json.dumps(tags)};
-                        const matches = ( tokens, path ) =>
-                            tokens.every( t => pathToTags[ path ].some( tag => tag.includes( t ) ) );
-
-                        window.addEventListener( 'keydown', e => {{
-                            if ( e.key === '/' ) {{
-                                e.preventDefault();
-                                const search = document.createElement( 'input' );
-                                search.id = 'search';
-                                search.autocomplete = 'off';
-
-                                search.addEventListener( 'keyup', e => {{
-                                    const search = e.target;
-                                    const nav = search.parentElement;
-
-                                    if ( e.key === 'Escape' ) {{
-                                        e.preventDefault();
-                                        nav.querySelectorAll( 'li' ).forEach(
-                                            li => li.classList.remove( 'greyed' )
-                                        );
-                                        nav.removeChild( search );
-                                        return;
-                                    }}
-
-                                    const query = e.target.value;
-                                    if ( query === '' ) {{
-                                        nav.querySelectorAll( 'li' ).forEach(
-                                            li => li.classList.remove( 'greyed' )
-                                        );
-                                        return;
-                                    }}
-                                    const tokens = query.split( ' ' );
-                                    nav.querySelectorAll( 'li:not(.greyed)' ).forEach( 
-                                        li => {{ if ( ! matches( tokens, li.querySelector( 'a' ).getAttribute( 'href' ) ) ) {{ li.classList.add( 'greyed' ); }} }}
-                                    );
-                                }} );
-
-                                const nav = document.querySelector( 'nav' );
-                                nav.insertBefore( search, nav.firstChild );
-                                search.focus();
-                            }}
-                        }} );
-                    </script>
-                </body>
-            </html>
-    ''').strip()
+            {% include 'service_worker' %}
+        </script>
+    </body>
+</html>
+'''
 
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        print(f'usage: {sys.argv[0]} (index|recipe)')
+        print(f'usage: {sys.argv[0]} (index|recipe|service-worker)')
         sys.exit(1)
 
     command = sys.argv[1]
-
     if command == 'recipe':
         if len(sys.argv) != 3:
             print(f'usage: {sys.argv[0]} recipe <path to recipe>')
             sys.exit(1)
 
         src = sys.argv[2]
-
         recipe = Recipe.from_path(src)
 
-        print(generate_recipe(recipe))
-
-    if command == 'index':
+        template = RECIPE
+        data = {'recipe': recipe}
+    elif command == 'index':
         if len(sys.argv) < 3:
             print(f'usage: {sys.argv[0]} index <paths to recipes>')
             sys.exit(1)
@@ -230,5 +306,27 @@ if __name__ == '__main__':
         srcs = sys.argv[2:]
         recipes = [Recipe.from_path(src) for src in srcs]
         recipes.sort(key=lambda recipe: recipe.title.lower())
+        tags = dict((r.path, r.tags + r.title.split(' ')) for r in recipes)
 
-        print(generate_index(recipes))
+        template = INDEX
+        data = {'recipes': recipes, 'tags': tags}
+    elif command == 'service-worker':
+        if len(sys.argv) < 3:
+            print(f'usage: {sys.argv[0]} service-worker <paths to recipes>')
+            sys.exit(1)
+
+        srcs = sys.argv[2:]
+        recipes = [Recipe.from_path(src) for src in srcs]
+
+        template = SERVICE_WORKER
+        data = {'recipes': recipes}
+    else:
+        print(f'usage: {sys.argv[0]} (index|recipe|service-worker)')
+        sys.exit(1)
+
+    environment = jinja2.Environment(loader=jinja2.DictLoader(TEMPLATES))
+    environment.filters['base64'] = lambda s: base64.b64encode(
+        s.encode()).decode()
+    environment.filters['json'] = json.dumps
+
+    print(environment.from_string(template).render(data))
