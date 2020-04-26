@@ -294,7 +294,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
         src = sys.argv[2]
-        recipe = Recipe.from_path(src)
+        try:
+            recipe = Recipe.from_path(src)
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            sys.exit(1)
 
         template = RECIPE
         data = {'recipe': recipe}
@@ -304,7 +308,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
         srcs = sys.argv[2:]
-        recipes = [Recipe.from_path(src) for src in srcs]
+        try:
+            recipes = [Recipe.from_path(src) for src in srcs]
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            sys.exit(1)
         recipes.sort(key=lambda recipe: recipe.title.lower())
         tags = dict((r.path, r.tags + r.title.split(' ')) for r in recipes)
 
@@ -316,7 +324,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
         srcs = sys.argv[2:]
-        recipes = [Recipe.from_path(src) for src in srcs]
+        try:
+            recipes = [Recipe.from_path(src) for src in srcs]
+        except ValueError as error:
+            print(error, file=sys.stderr)
+            sys.exit(1)
 
         template = SERVICE_WORKER
         data = {'recipes': recipes}
@@ -329,4 +341,8 @@ if __name__ == '__main__':
         s.encode()).decode()
     environment.filters['json'] = json.dumps
 
-    print(environment.from_string(template).render(data))
+    try:
+        print(environment.from_string(template).render(data))
+    except jinja2.exceptions.TemplateError as error:
+        print(error, file=sys.stderr)
+        sys.exit(1)
