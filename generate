@@ -288,52 +288,49 @@ if __name__ == '__main__':
         sys.exit(1)
 
     command = sys.argv[1]
+
     if command == 'recipe':
         if len(sys.argv) != 3:
             print(f'usage: {sys.argv[0]} recipe <path to recipe>')
             sys.exit(1)
 
-        src = sys.argv[2]
-        try:
-            recipe = Recipe.from_path(src)
-        except ValueError as error:
-            print(error, file=sys.stderr)
-            sys.exit(1)
-
         template = RECIPE
-        data = {'recipe': recipe}
+
+        def data(recipes: List[Recipe]) -> Dict[str, Any]:
+            return {'recipe': recipes[0]}
+
     elif command == 'index':
         if len(sys.argv) < 3:
             print(f'usage: {sys.argv[0]} index <paths to recipes>')
             sys.exit(1)
 
-        srcs = sys.argv[2:]
-        try:
-            recipes = [Recipe.from_path(src) for src in srcs]
-        except ValueError as error:
-            print(error, file=sys.stderr)
-            sys.exit(1)
-        recipes.sort(key=lambda recipe: recipe.title.lower())
-        tags = dict((r.path, r.tags + r.title.split(' ')) for r in recipes)
-
         template = INDEX
-        data = {'recipes': recipes, 'tags': tags}
+
+        def data(recipes: List[Recipe]) -> Dict[str, Any]:
+            tags = dict((r.path, r.tags + r.title.split(' '))
+                        for r in sorted(recipes,
+                                        key=lambda r: r.title.lower()))
+
+            return {'recipes': recipes, 'tags': tags}
+
     elif command == 'service-worker':
         if len(sys.argv) < 3:
             print(f'usage: {sys.argv[0]} service-worker <paths to recipes>')
             sys.exit(1)
 
-        srcs = sys.argv[2:]
-        try:
-            recipes = [Recipe.from_path(src) for src in srcs]
-        except ValueError as error:
-            print(error, file=sys.stderr)
-            sys.exit(1)
-
         template = SERVICE_WORKER
-        data = {'recipes': recipes}
+
+        def data(recipes: List[Recipe]) -> Dict[str, Any]:
+            return {'recipes': recipes}
     else:
         print(f'usage: {sys.argv[0]} (index|recipe|service-worker)')
+        sys.exit(1)
+
+    srcs = sys.argv[2:]
+    try:
+        recipes = [Recipe.from_path(src) for src in srcs]
+    except ValueError as error:
+        print(error, file=sys.stderr)
         sys.exit(1)
 
     environment = jinja2.Environment(loader=jinja2.DictLoader(TEMPLATES))
@@ -342,7 +339,7 @@ if __name__ == '__main__':
     environment.filters['json'] = json.dumps
 
     try:
-        print(environment.from_string(template).render(data))
+        print(environment.from_string(template).render(data(recipes)))
     except jinja2.exceptions.TemplateError as error:
         print(error, file=sys.stderr)
         sys.exit(1)
