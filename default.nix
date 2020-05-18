@@ -18,12 +18,12 @@ stdenv.mkDerivation rec {
   '';
 
   buildPhase = ''
-    make
+    make -j
   '';
 
   installPhase = ''
     mkdir -p $out
-    cp -r $bin/build/* $out
+    cp -r ./build/* $out
   '';
 
 }
