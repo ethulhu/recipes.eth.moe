@@ -13,11 +13,17 @@ stdenv.mkDerivation rec {
     python38Packages.pyaml
   ];
 
-  phases = "installPhase";
+  patchPhase = ''
+    patchShebangs generate
+  '';
+
+  buildPhase = ''
+    make
+  '';
 
   installPhase = ''
     mkdir -p $out
-    cp -r ${src}/build/* $out
+    cp -r $bin/build/* $out
   '';
 
 }
