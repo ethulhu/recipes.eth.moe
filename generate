@@ -22,6 +22,7 @@ class Recipe:
 
     tags: List[str] = dataclasses.field(default_factory=list)
     notes: List[str] = dataclasses.field(default_factory=list)
+    links: List[str] = dataclasses.field(default_factory=list)
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> 'Recipe':
